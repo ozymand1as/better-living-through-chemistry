@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Med Tracker PWA</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <!-- Google Fonts for modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Med Tracker</h1>
+            <p id="current-date">Loading date...</p>
+        </header>
+
+        <main>
+            <div id="empty-state" class="hidden">
+                <div class="empty-icon">🫙</div>
+                <p>No medications scheduled.</p>
+                <p class="subtitle">Tap the + button below to add one.</p>
+            </div>
+            <ul id="med-list" class="med-list">
+                <!-- Medication items will be rendered here dynamically -->
+            </ul>
+        </main>
+
+        <button id="fab" class="fab" aria-label="Add Medication">
+            <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        </button>
+
+        <!-- Add Medication Modal -->
+        <div id="add-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>New Medication</h2>
+                <form id="add-form">
+                    <div class="input-group">
+                        <label for="med-name">Medication Name</label>
+                        <input type="text" id="med-name" required placeholder="e.g. Vitamin D3" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label for="med-time">Time</label>
+                        <input type="time" id="med-time" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Permission Banner (shown if needed) -->
+    <div id="notification-banner" class="notification-banner hidden">
+        <p>Enable notifications to get local reminders.</p>
+        <button id="enable-notifications" class="btn btn-sm btn-primary">Enable</button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
