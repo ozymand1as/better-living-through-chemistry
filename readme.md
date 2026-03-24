@@ -11,7 +11,12 @@ A sleek, modern, and high-performance Progressive Web App (PWA) designed to help
 - **Premium Design**: Beautiful dark-mode interface with glassmorphic elements, smooth animations, and pixel-perfect SVG icons.
 - **Data Privacy**: All data is stored locally on your device using `localStorage`. No data ever leaves your browser.
 
-## 🚀 Getting Started
+## 🚀 Live Demo
+
+The app is hosted on GitHub Pages:
+**[https://ozymand1as.github.io/better-living-through-chemistry/](https://ozymand1as.github.io/better-living-through-chemistry/)**
+
+## 💻 Getting Started
 
 ### Local Development
 
