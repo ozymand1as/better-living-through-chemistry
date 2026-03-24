@@ -8,7 +8,7 @@ A sleek, modern, and high-performance Progressive Web App (PWA) designed to help
 
 - **Daily Tracking**: Add your medications and their scheduled times. Mark them as taken with a simple tap.
 - **Midnight Reset**: The app automatically resets all checkmarks at midnight, giving you a fresh start every day.
-- **Local Notifications**: Receive timely reminders directly on your device when it's time to take your medication.
+- **Local Notifications**: Receive timely reminders directly on your device when it's time to take your medication. *(Note: On iOS, you must first "Add to Home Screen" to enable notifications).*
 - **Offline First**: Works without an internet connection once installed, thanks to a robust Service Worker.
 - **Premium Design**: Beautiful dark-mode interface with glassmorphic elements, smooth animations, and pixel-perfect SVG icons.
 - **Data Privacy**: All data is stored locally on your device using `localStorage`. No data ever leaves your browser.

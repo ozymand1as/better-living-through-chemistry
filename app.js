@@ -200,17 +200,51 @@ addModal.addEventListener('click', (e) => {
 });
 
 // === Notification Logic ===
+function isIOS() {
+    return [
+        'iPad Simulator',
+        'iPhone Simulator',
+        'iPod Simulator',
+        'iPad',
+        'iPhone',
+        'iPod'
+    ].includes(navigator.platform)
+    // iPad on iOS 13 detection
+    || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+}
+
+function isStandalone() {
+    return (window.matchMedia('(display-mode: standalone)').matches) || (window.navigator.standalone);
+}
+
 function checkNotificationPermissions() {
-    if (!('Notification' in window)) return;
+    // iOS requires Add to Home Screen first
+    if (isIOS() && !isStandalone()) {
+        const bannerText = notificationBanner.querySelector('p');
+        if (bannerText) {
+            bannerText.textContent = "Tap Share then 'Add to Home Screen' to enable notifications.";
+        }
+        notificationBanner.classList.remove('hidden');
+        enableNotificationsBtn.classList.add('hidden'); // Hide button as it won't work yet
+        return;
+    }
+
+    if (!('Notification' in window)) {
+        notificationBanner.classList.add('hidden');
+        return;
+    }
 
     if (Notification.permission === 'default') {
         notificationBanner.classList.remove('hidden');
+        enableNotificationsBtn.classList.remove('hidden');
     } else if (Notification.permission === 'granted') {
         notificationBanner.classList.add('hidden');
     }
 }
 
 enableNotificationsBtn.addEventListener('click', () => {
+    if (!('Notification' in window)) return;
+    
     Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
             notificationBanner.classList.add('hidden');
