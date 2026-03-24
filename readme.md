@@ -1,0 +1,55 @@
+# 💊 Med Tracker PWA
+
+A sleek, modern, and high-performance Progressive Web App (PWA) designed to help you track your daily medication intake with ease.
+
+## ✨ Features
+
+- **Daily Tracking**: Add your medications and their scheduled times. Mark them as taken with a simple tap.
+- **Midnight Reset**: The app automatically resets all checkmarks at midnight, giving you a fresh start every day.
+- **Local Notifications**: Receive timely reminders directly on your device when it's time to take your medication.
+- **Offline First**: Works without an internet connection once installed, thanks to a robust Service Worker.
+- **Premium Design**: Beautiful dark-mode interface with glassmorphic elements, smooth animations, and pixel-perfect SVG icons.
+- **Data Privacy**: All data is stored locally on your device using `localStorage`. No data ever leaves your browser.
+
+## 🚀 Getting Started
+
+### Local Development
+
+1.  **Clone the repository** (if you haven't already):
+    ```bash
+    git clone <repository-url>
+    cd better-living-through-chemistry
+    ```
+
+2.  **Serve the files**:
+    Since it's a PWA, it's best viewed through a local server. You can use Python's built-in server:
+    ```bash
+    python3 -m http.server 8000
+    ```
+
+3.  **Open in Browser**:
+    Navigate to [http://localhost:8000](http://localhost:8000).
+
+### Installing as a PWA
+
+-   **Desktop (Chrome/Edge)**: Click the **Install** icon in the address bar to add it to your applications.
+-   **Mobile (iOS)**: Tap the **Share** button (square with arrow) and select **Add to Home Screen**.
+-   **Mobile (Android)**: Tap the three dots menu and select **Install app**.
+
+## 🛠️ Technology Stack
+
+- **Structure**: Semantic HTML5
+- **Styling**: Vanilla CSS3 (Custom Variables, Flexbox, Gradients)
+- **Logic**: Vanilla JavaScript (ES6+)
+- **Storage**: Web Storage API (`localStorage`)
+- **PWA Features**: Service Workers, Web App Manifest, Cache API, Notifications API
+
+## 📝 Design Notes
+
+- **Typography**: Uses the 'Inter' typeface for maximum readability.
+- **Aesthetics**: Dark mode by default using a curated color palette (Hex: `#0d1117`, `#3b82f6`).
+- **Interactions**: Features a "floating action button" (FAB) for adding medications and smooth modal transitions.
+
+---
+
+*Built with care for Better Living Through Chemistry.*
