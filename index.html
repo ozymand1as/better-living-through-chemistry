@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-    <base href="/better-living-through-chemistry/">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Med Tracker PWA</title>
@@ -18,8 +17,27 @@
 <body>
     <div class="app-container">
         <header>
-            <h1>Med Tracker</h1>
-            <p id="current-date">Loading date...</p>
+            <div class="header-top">
+                <h1>Med Tracker</h1>
+                <button id="today-btn" class="btn btn-sm btn-secondary hidden">Today</button>
+            </div>
+            <div class="date-nav">
+                <button id="prev-day" class="nav-btn" aria-label="Previous Day">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <div class="date-display">
+                    <p id="current-date">Loading date...</p>
+                </div>
+                <button id="next-day" class="nav-btn" aria-label="Next Day">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
         </header>
 
         <main>

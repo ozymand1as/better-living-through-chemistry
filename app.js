@@ -1,8 +1,12 @@
 // State
 let medications = JSON.parse(localStorage.getItem('medications')) || [];
+let viewDate = new Date(); // The date currently being viewed
 
 // DOM Elements
 const dateEl = document.getElementById('current-date');
+const todayBtn = document.getElementById('today-btn');
+const prevDayBtn = document.getElementById('prev-day');
+const nextDayBtn = document.getElementById('next-day');
 const emptyStateEl = document.getElementById('empty-state');
 const medListEl = document.getElementById('med-list');
 const fabBtn = document.getElementById('fab');
@@ -11,6 +15,24 @@ const cancelBtn = document.getElementById('cancel-btn');
 const addForm = document.getElementById('add-form');
 const notificationBanner = document.getElementById('notification-banner');
 const enableNotificationsBtn = document.getElementById('enable-notifications');
+
+// Data Migration: lastTakenDate -> takenDates [], add createdAt
+let migrated = false;
+medications = medications.map(med => {
+    if (med.lastTakenDate !== undefined) {
+        med.takenDates = med.lastTakenDate ? [med.lastTakenDate] : [];
+        delete med.lastTakenDate;
+        migrated = true;
+    }
+    if (!med.takenDates) med.takenDates = [];
+    if (!med.createdAt) {
+        // Default to project start date or earliest taken date
+        med.createdAt = med.takenDates.length > 0 ? med.takenDates.sort()[0] : "2026-03-24";
+        migrated = true;
+    }
+    return med;
+});
+if (migrated) localStorage.setItem('medications', JSON.stringify(medications));
 
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
@@ -21,63 +43,103 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Utility: Get current date in YYYY-MM-DD format based on local timezone
-function getTodayString() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+// Utility: Get date string in YYYY-MM-DD format for a given Date object
+function getDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+}
+
+function getTodayString() {
+    return getDateString(new Date());
 }
 
 // Utility: Format date for header
 function updateHeaderDate() {
-    const options = { weekday: 'long', month: 'long', day: 'numeric' };
-    const dateStr = new Date().toLocaleDateString(undefined, options);
-    if (dateEl.textContent !== dateStr) {
-        dateEl.textContent = dateStr;
+    const todayStr = getTodayString();
+    const viewStr = getDateString(viewDate);
+    
+    // Toggle Today button
+    if (viewStr === todayStr) {
+        todayBtn.classList.add('hidden');
+    } else {
+        todayBtn.classList.remove('hidden');
+    }
+
+    let displayStr = "";
+    const diffDays = Math.round((viewDate.setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) displayStr = "Today";
+    else if (diffDays === -1) displayStr = "Yesterday";
+    else if (diffDays === 1) displayStr = "Tomorrow";
+    else {
+        const options = { weekday: 'short', month: 'short', day: 'numeric' };
+        displayStr = viewDate.toLocaleDateString(undefined, options);
+    }
+
+    if (dateEl.textContent !== displayStr) {
+        dateEl.textContent = displayStr;
+    }
+}
+
+// Navigation Handlers
+prevDayBtn.addEventListener('click', () => changeDate(-1));
+nextDayBtn.addEventListener('click', () => changeDate(1));
+todayBtn.addEventListener('click', () => {
+    viewDate = new Date();
+    renderMeds();
+});
+
+function changeDate(days) {
+    const animationClass = days > 0 ? 'swipe-left' : 'swipe-right';
+    medListEl.classList.add(animationClass);
+    
+    setTimeout(() => {
+        viewDate.setDate(viewDate.getDate() + days);
+        renderMeds();
+        medListEl.classList.remove(animationClass);
+    }, 150);
+}
+
+// Swipe Support
+let touchStartX = 0;
+let touchEndX = 0;
+
+const mainContainer = document.querySelector('main');
+mainContainer.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+}, false);
+
+mainContainer.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+}, false);
+
+function handleSwipe() {
+    const threshold = 50;
+    if (touchEndX < touchStartX - threshold) {
+        changeDate(1); // Swipe left -> Next day
+    }
+    if (touchEndX > touchStartX + threshold) {
+        changeDate(-1); // Swipe right -> Previous day
     }
 }
 
 // Save to LocalStorage
 function saveMeds() {
-    // Sort medications by time
     medications.sort((a, b) => a.time.localeCompare(b.time));
     localStorage.setItem('medications', JSON.stringify(medications));
     renderMeds();
 }
 
-// Check and Reset at Midnight logic
-function checkMidnightReset() {
-    const today = getTodayString();
-    let updated = false;
-    
-    medications.forEach(med => {
-        if (med.lastTakenDate && med.lastTakenDate !== today) {
-            med.lastTakenDate = null;
-            updated = true;
-        }
-        // Also clean up old notifications for testing/robustness
-        if (med.lastNotifiedDate && med.lastNotifiedDate !== today) {
-            med.lastNotifiedDate = null;
-            updated = true;
-        }
-    });
-
-    return updated; // Caller decides if they want to saveMeds/renderMeds
-}
-
 // Render Medications
 function renderMeds() {
-    // Before rendering, softly check midnight reset.
-    // We do NOT call saveMeds here because saveMeds calls renderMeds (infinite loop).
-    const needsReset = checkMidnightReset();
-    if (needsReset) {
-        // Just save directly to avoid infinite loop with saveMeds
-        localStorage.setItem('medications', JSON.stringify(medications));
-    }
+    updateHeaderDate();
+    const viewStr = getDateString(viewDate);
+    const visibleMeds = medications.filter(med => med.createdAt <= viewStr);
 
-    if (medications.length === 0) {
+    if (visibleMeds.length === 0) {
         emptyStateEl.style.display = 'flex';
         medListEl.innerHTML = '';
         return;
@@ -86,10 +148,8 @@ function renderMeds() {
     emptyStateEl.style.display = 'none';
     medListEl.innerHTML = '';
 
-    const today = getTodayString();
-
-    medications.forEach(med => {
-        const isTaken = med.lastTakenDate === today;
+    visibleMeds.forEach(med => {
+        const isTaken = med.takenDates.includes(viewStr);
 
         const li = document.createElement('li');
         li.className = `med-item ${isTaken ? 'taken' : ''}`;
@@ -126,25 +186,31 @@ function renderMeds() {
 
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const id = e.currentTarget.dataset.id;
-            deleteMed(id);
+            if (confirm(`Delete ${medications.find(m => m.id === e.currentTarget.dataset.id)?.name}?`)) {
+                deleteMed(e.currentTarget.dataset.id);
+            }
         });
     });
 }
 
-// Toggle Medication Status
+// Toggle Medication Status for the current viewDate
 function toggleMed(id, isChecked) {
     const med = medications.find(m => m.id === id);
     if (med) {
-        med.lastTakenDate = isChecked ? getTodayString() : null;
+        const viewStr = getDateString(viewDate);
+        if (isChecked) {
+            if (!med.takenDates.includes(viewStr)) {
+                med.takenDates.push(viewStr);
+            }
+        } else {
+            med.takenDates = med.takenDates.filter(d => d !== viewStr);
+        }
         saveMeds();
     }
 }
 
 // Delete Medication
 function deleteMed(id) {
-    // Only delete with very light confirm prompt via window confirm for simplicity, 
-    // or just delete instantly if no complex modal is desired. We'll delete directly for better UX.
     medications = medications.filter(m => m.id !== id);
     saveMeds();
 }
@@ -159,7 +225,8 @@ addForm.addEventListener('submit', (e) => {
         id: Date.now().toString(),
         name: nameInput.value.trim(),
         time: timeInput.value,
-        lastTakenDate: null,
+        takenDates: [],
+        createdAt: getTodayString(),
         lastNotifiedDate: null
     };
 
@@ -183,7 +250,6 @@ function formatTime(timeStr) {
 // Modal Handlers
 fabBtn.addEventListener('click', () => {
     addModal.classList.remove('hidden');
-    // Set default time to current time rounded to nearest hour
     const d = new Date();
     document.getElementById('med-time').value = `${String(d.getHours()).padStart(2, '0')}:00`;
     document.getElementById('med-name').focus();
@@ -209,7 +275,6 @@ function isIOS() {
         'iPhone',
         'iPod'
     ].includes(navigator.platform)
-    // iPad on iOS 13 detection
     || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
 }
 
@@ -218,40 +283,52 @@ function isStandalone() {
 }
 
 function checkNotificationPermissions() {
-    // iOS requires Add to Home Screen first
     if (isIOS() && !isStandalone()) {
-        const bannerText = notificationBanner.querySelector('p');
-        if (bannerText) {
-            bannerText.textContent = "Tap Share then 'Add to Home Screen' to enable notifications.";
+        if (notificationBanner) {
+            const bannerText = notificationBanner.querySelector('p');
+            if (bannerText) bannerText.textContent = "Tap Share then 'Add to Home Screen' to enable notifications.";
+            notificationBanner.classList.remove('hidden');
         }
-        notificationBanner.classList.remove('hidden');
-        enableNotificationsBtn.classList.add('hidden'); // Hide button as it won't work yet
+        if (enableNotificationsBtn) enableNotificationsBtn.classList.add('hidden');
         return;
     }
 
     if (!('Notification' in window)) {
-        notificationBanner.classList.add('hidden');
+        if (notificationBanner) notificationBanner.classList.add('hidden');
         return;
     }
 
     if (Notification.permission === 'default') {
-        notificationBanner.classList.remove('hidden');
-        enableNotificationsBtn.classList.remove('hidden');
+        if (notificationBanner) notificationBanner.classList.remove('hidden');
+        if (enableNotificationsBtn) enableNotificationsBtn.classList.remove('hidden');
     } else if (Notification.permission === 'granted') {
-        notificationBanner.classList.add('hidden');
+        if (notificationBanner) notificationBanner.classList.add('hidden');
     }
 }
 
-enableNotificationsBtn.addEventListener('click', () => {
-    if (!('Notification' in window)) return;
-    
-    Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-            notificationBanner.classList.add('hidden');
-        }
+if (enableNotificationsBtn) {
+    enableNotificationsBtn.addEventListener('click', () => {
+        if (!('Notification' in window)) return;
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                notificationBanner.classList.add('hidden');
+            }
+        });
     });
-});
+}
 
+function updateBadge() {
+    if (!('setAppBadge' in navigator)) return;
+    const today = getTodayString();
+    const pendingCount = medications.filter(med => !med.takenDates.includes(today)).length;
+    if (pendingCount > 0) {
+        navigator.setAppBadge(pendingCount).catch(() => {});
+    } else {
+        navigator.clearAppBadge().catch(() => {});
+    }
+}
+
+let lastCheckedTime = '';
 function checkAlarms() {
     if (Notification.permission !== 'granted') return;
 
@@ -259,57 +336,58 @@ function checkAlarms() {
     const currentHour = String(now.getHours()).padStart(2, '0');
     const currentMinute = String(now.getMinutes()).padStart(2, '0');
     const currentTime = `${currentHour}:${currentMinute}`;
+    
+    if (currentTime === lastCheckedTime) return;
+    lastCheckedTime = currentTime;
+    
     const today = getTodayString();
-
     let updated = false;
 
     medications.forEach(med => {
-        if (med.time === currentTime && med.lastNotifiedDate !== today && med.lastTakenDate !== today) {
+        if (med.time === currentTime && med.lastNotifiedDate !== today && !med.takenDates.includes(today)) {
             sendNotification(med);
             med.lastNotifiedDate = today;
             updated = true;
         }
     });
 
-    if (updated) {
-        localStorage.setItem('medications', JSON.stringify(medications));
-        // We don't renderMeds here to avoid unnecessarily interrupting UI if they are engaging with it
-    }
+    if (updated) localStorage.setItem('medications', JSON.stringify(medications));
+    updateIconsAndBadge();
 }
 
 function sendNotification(med) {
-    try {
-        if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-            navigator.serviceWorker.ready.then(reg => {
-                reg.showNotification(`Time for ${med.name}`, {
-                    body: `It's time to take your medication.`,
-                    icon: './icon.svg',
-                    vibrate: [200, 100, 200],
-                    tag: 'med-reminder-' + med.id, // Group notifications
-                    renotify: true
-                });
-            });
-        } else {
-            new Notification(`Time for ${med.name}`, {
-                body: `It's time to take your medication.`,
-                icon: './icon.svg'
-            });
-        }
-    } catch(e) {
-        console.error("Notification failed", e);
+    const options = {
+        body: `It's time to take your medication: ${med.name}`,
+        icon: 'icon.svg',
+        vibrate: [200, 100, 200],
+        tag: 'med-reminder-' + med.id,
+        renotify: true
+    };
+
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification(`Medication Reminder`, options);
+        }).catch(() => new Notification(`Medication Reminder`, options));
+    } else {
+        new Notification(`Medication Reminder`, options);
     }
+}
+
+function updateIconsAndBadge() {
+    updateBadge();
 }
 
 // Initialization
 updateHeaderDate();
 renderMeds();
 checkNotificationPermissions();
+updateIconsAndBadge();
 
-// Check for alarms and midnight resets every 10 seconds
+// Interval for alarms and date updates
 setInterval(() => {
-    updateHeaderDate();
     checkAlarms();
-    if (checkMidnightReset()) {
-        renderMeds();
+    // If we're looking at "Today", make sure the time/header stays fresh
+    if (getDateString(viewDate) === getTodayString()) {
+        updateHeaderDate();
     }
 }, 10000);
