@@ -339,6 +339,11 @@ function isStandalone() {
 }
 
 function checkNotificationPermissions() {
+    if (isTelegram()) {
+        if (notificationBanner) notificationBanner.classList.add('hidden');
+        return;
+    }
+
     if (isIOS() && !isStandalone()) {
         if (notificationBanner) {
             const bannerText = notificationBanner.querySelector('p');
