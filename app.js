@@ -2,14 +2,47 @@
 let medications = JSON.parse(localStorage.getItem('medications')) || [];
 let viewDate = new Date(); // The date currently being viewed
 
+// Telegram Integration Helpers
+function isTelegram() {
+    return !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData);
+}
+
+const tg = window.Telegram ? window.Telegram.WebApp : null;
+
+if (isTelegram()) {
+    tg.ready();
+    tg.expand();
+    
+    // Sync Telegram Theme
+    function syncTelegramTheme() {
+        const theme = tg.themeParams;
+        if (theme.bg_color) document.documentElement.style.setProperty('--bg-color', theme.bg_color);
+        if (theme.text_color) document.documentElement.style.setProperty('--text-primary', theme.text_color);
+        if (theme.hint_color) document.documentElement.style.setProperty('--text-secondary', theme.hint_color);
+        if (theme.button_color) document.documentElement.style.setProperty('--primary', theme.button_color);
+        if (theme.secondary_bg_color) document.documentElement.style.setProperty('--surface-color', theme.secondary_bg_color);
+    }
+    
+    syncTelegramTheme();
+    tg.onEvent('themeChanged', syncTelegramTheme);
+}
+
 // DOM Elements
 const dateEl = document.getElementById('current-date');
 const todayBtn = document.getElementById('today-btn');
+const tgAddBtn = document.getElementById('tg-add-btn');
 const prevDayBtn = document.getElementById('prev-day');
 const nextDayBtn = document.getElementById('next-day');
 const emptyStateEl = document.getElementById('empty-state');
 const medListEl = document.getElementById('med-list');
 const fabBtn = document.getElementById('fab');
+
+if (isTelegram()) {
+    fabBtn.style.display = 'none';
+    tgAddBtn.classList.remove('hidden');
+    tgAddBtn.addEventListener('click', openModal);
+}
+
 const addModal = document.getElementById('add-modal');
 const cancelBtn = document.getElementById('cancel-btn');
 const addForm = document.getElementById('add-form');
@@ -202,8 +235,10 @@ function toggleMed(id, isChecked) {
             if (!med.takenDates.includes(viewStr)) {
                 med.takenDates.push(viewStr);
             }
+            if (isTelegram()) tg.HapticFeedback.notificationOccurred('success');
         } else {
             med.takenDates = med.takenDates.filter(d => d !== viewStr);
+            if (isTelegram()) tg.HapticFeedback.impactOccurred('light');
         }
         saveMeds();
     }
@@ -212,14 +247,22 @@ function toggleMed(id, isChecked) {
 // Delete Medication
 function deleteMed(id) {
     medications = medications.filter(m => m.id !== id);
+    if (isTelegram()) tg.HapticFeedback.notificationOccurred('warning');
     saveMeds();
 }
 
 // Add Medication
-addForm.addEventListener('submit', (e) => {
-    e.preventDefault();
+addForm.addEventListener('submit', handleAddMed);
+
+function handleAddMed(e) {
+    if (e) e.preventDefault();
     const nameInput = document.getElementById('med-name');
     const timeInput = document.getElementById('med-time');
+    
+    if (!nameInput.value.trim()) {
+        if (isTelegram()) tg.showAlert('Please enter a medication name');
+        return;
+    }
 
     const newMed = {
         id: Date.now().toString(),
@@ -236,7 +279,8 @@ addForm.addEventListener('submit', (e) => {
     // Reset and close
     addForm.reset();
     closeModal();
-});
+    if (isTelegram()) tg.HapticFeedback.notificationOccurred('success');
+}
 
 // Format Time (HH:MM to 12h format string)
 function formatTime(timeStr) {
@@ -248,16 +292,28 @@ function formatTime(timeStr) {
 }
 
 // Modal Handlers
-fabBtn.addEventListener('click', () => {
+fabBtn.addEventListener('click', openModal);
+
+function openModal() {
     addModal.classList.remove('hidden');
     const d = new Date();
     document.getElementById('med-time').value = `${String(d.getHours()).padStart(2, '0')}:00`;
     document.getElementById('med-name').focus();
-});
+
+    if (isTelegram()) {
+        tg.MainButton.setText("SAVE MEDICATION");
+        tg.MainButton.show();
+        tg.MainButton.onClick(handleAddMed);
+    }
+}
 
 function closeModal() {
     addModal.classList.add('hidden');
     addForm.reset();
+    if (isTelegram()) {
+        tg.MainButton.hide();
+        tg.MainButton.offClick(handleAddMed);
+    }
 }
 
 cancelBtn.addEventListener('click', closeModal);

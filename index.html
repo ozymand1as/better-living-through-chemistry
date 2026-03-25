@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Med Tracker PWA</title>
-    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+    <link rel="stylesheet" href="style.css?v=2">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <!-- Google Fonts for modern typography -->
@@ -19,7 +20,10 @@
         <header>
             <div class="header-top">
                 <h1>Med Tracker</h1>
-                <button id="today-btn" class="btn btn-sm btn-secondary hidden">Today</button>
+                <div class="header-actions">
+                    <button id="today-btn" class="btn btn-sm btn-secondary hidden">Today</button>
+                    <button id="tg-add-btn" class="btn btn-sm btn-primary hidden" aria-label="Add Medication">+</button>
+                </div>
             </div>
             <div class="date-nav">
                 <button id="prev-day" class="nav-btn" aria-label="Previous Day">

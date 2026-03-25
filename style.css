@@ -1,5 +1,13 @@
 :root {
     --bg-color: #0d1117;
+}
+
+.hidden {
+    display: none !important;
+}
+
+:root {
+    --bg-color: #0d1117;
     --surface-color: #161b22;
     --surface-highlight: #21262d;
     --primary: #3b82f6;
